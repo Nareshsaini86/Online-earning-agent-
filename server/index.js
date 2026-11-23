@@ -13,6 +13,7 @@ import archiver from 'archiver';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
+const HOST = process.env.HOST || '127.0.0.1';
 const DATA_DIR = path.resolve('data');
 const DATA_FILE = path.join(DATA_DIR, 'projects.json');
 app.use(express.json({ limit: '1mb' }));
@@ -248,4 +249,4 @@ app.post('/api/opportunities/:id/development-plan', async (req, res, next) => {
 });
 
 app.use((err, _req, res, _next) => { console.error(err); res.status(500).json({ error: 'Unexpected server error.' }); });
-app.listen(PORT, () => console.log(`Online Earning Agent dashboard listening on http://localhost:${PORT}`));
+app.listen(PORT, HOST, () => console.log(`Online Earning Agent dashboard listening on http://${HOST}:${PORT}`));
