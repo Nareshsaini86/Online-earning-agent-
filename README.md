@@ -42,3 +42,9 @@ Zero-cost-first freelance workspace built around software development skills (.N
 - Analysis is stored with the opportunity in `data/opportunities.json`.
 - API: `POST /api/opportunities/:id/analyze`
 - Estimates are heuristic only and should not replace reading the full scope or checking the client.
+
+## Step 5 — Proposal Generator (draft-only)
+- Creates a tailored proposal draft from the opportunity title and description using a local template and keyword focus areas.
+- Editable proposal text, copy button, and client clarification questions.
+- No paid AI API, auto-send, or application submission.
+- API: `POST /api/opportunities/:id/draft-proposal`
