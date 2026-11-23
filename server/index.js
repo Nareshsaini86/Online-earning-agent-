@@ -102,7 +102,7 @@ app.patch('/api/projects/:id/tasks/:taskId', async (req, res, next) => {
 });
 // Step 11: project workspace files are stored as drafts inside project JSON.
 const cleanWorkspacePath = (input) => {
-  const raw = String(input || '').replace(/\\\\/g, '/').trim();
+  const raw = String(input || '').replace(/\\/g, '/').trim();
   if (!raw || raw.length > 180 || raw.startsWith('/') || raw.split('/').some(part => !part || part === '.' || part === '..')) throw new Error('Invalid workspace file path.');
   return raw.split('/').map(part => part.replace(/[^a-zA-Z0-9._-]/g, '_')).join('/');
 };
