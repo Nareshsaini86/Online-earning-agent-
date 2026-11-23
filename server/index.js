@@ -9,6 +9,7 @@ import { createDevelopmentPlan } from './developer-agent.js';
 import { generateStarterCode } from './code-generator.js';
 import { generateWithAI } from './ai-engine.js';
 import { randomUUID } from 'node:crypto';
+import archiver from 'archiver';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -97,6 +98,47 @@ app.patch('/api/projects/:id/tasks/:taskId', async (req, res, next) => {
     const projects = await readProjects(); const p = projects.find(x => x.id === req.params.id); if (!p) return res.status(404).json({ error: 'Project not found.' });
     const task = (p.tasks || []).find(x => x.id === req.params.taskId); if (!task) return res.status(404).json({ error: 'Task not found.' });
     task.status = status; task.updatedAt = new Date().toISOString(); p.updatedAt = task.updatedAt; await writeProjects(projects); res.json(task);
+  } catch (e) { next(e); }
+});
+// Step 11: project workspace files are stored as drafts inside project JSON.
+const cleanWorkspacePath = (input) => {
+  const raw = String(input || '').replace(/\\\\/g, '/').trim();
+  if (!raw || raw.length > 180 || raw.startsWith('/') || raw.split('/').some(part => !part || part === '.' || part === '..')) throw new Error('Invalid workspace file path.');
+  return raw.split('/').map(part => part.replace(/[^a-zA-Z0-9._-]/g, '_')).join('/');
+};
+app.get('/api/projects/:id/workspace', async (req, res, next) => {
+  try { const projects = await readProjects(); const p = projects.find(x => x.id === req.params.id); if (!p) return res.status(404).json({ error: 'Project not found.' }); res.json({ files: p.workspaceFiles || [] }); }
+  catch (e) { next(e); }
+});
+app.put('/api/projects/:id/workspace/file', async (req, res, next) => {
+  try {
+    const filePath = cleanWorkspacePath(req.body?.path); const content = String(req.body?.content ?? '');
+    if (content.length > 500000) return res.status(413).json({ error: 'File content too large (500 KB max).' });
+    const projects = await readProjects(); const p = projects.find(x => x.id === req.params.id); if (!p) return res.status(404).json({ error: 'Project not found.' });
+    p.workspaceFiles = p.workspaceFiles || []; const existing = p.workspaceFiles.find(f => f.path === filePath);
+    if (existing) { existing.content = content; existing.updatedAt = new Date().toISOString(); } else p.workspaceFiles.push({ path: filePath, content, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+    p.updatedAt = new Date().toISOString(); await writeProjects(projects); res.json({ path: filePath, saved: true });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.post('/api/projects/:id/workspace/ai-edit', async (req, res, next) => {
+  try {
+    const filePath = cleanWorkspacePath(req.body?.path); const prompt = String(req.body?.prompt || '').trim().slice(0, 8000);
+    if (!prompt) return res.status(400).json({ error: 'Describe the change you want.' });
+    const projects = await readProjects(); const p = projects.find(x => x.id === req.params.id); if (!p) return res.status(404).json({ error: 'Project not found.' });
+    const existing = (p.workspaceFiles || []).find(f => f.path === filePath);
+    const context = 'Project: '+p.title+'\\nProject requirements: '+String(p.description||'').slice(0,8000)+'\\nTarget filename: '+filePath+'\\nUser requested change: '+prompt+'\\nCurrent file contents:\\n'+String(existing?.content||'').slice(0,30000)+'\\nReturn ONLY the complete replacement file contents. No markdown fences.';
+    const result = await generateWithAI({ title: 'Edit '+filePath, description: context, mode: 'code' });
+    res.json({ path: filePath, content: result.content, model: result.model, notice: result.notice, original: existing?.content || '' });
+  } catch (e) { res.status(e.status || 500).json({ error: e.message || 'AI workspace edit failed.' }); }
+});
+app.get('/api/projects/:id/workspace.zip', async (req, res, next) => {
+  try {
+    const projects = await readProjects(); const p = projects.find(x => x.id === req.params.id); if (!p) return res.status(404).json({ error: 'Project not found.' });
+    const files = p.workspaceFiles || []; if (!files.length) return res.status(400).json({ error: 'Workspace is empty. Save at least one file first.' });
+    res.setHeader('Content-Type', 'application/zip'); res.setHeader('Content-Disposition', 'attachment; filename="project-workspace.zip"');
+    const archive = archiver('zip', { zlib: { level: 9 } }); archive.on('error', err => next(err)); archive.pipe(res);
+    for (const file of files) archive.append(String(file.content || ''), { name: cleanWorkspacePath(file.path) });
+    archive.finalize();
   } catch (e) { next(e); }
 });
 app.get('/api/dashboard', async (_req, res, next) => {
