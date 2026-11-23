@@ -48,6 +48,22 @@ function renderFeed(){
 }
 async function loadFeed(){try{feedItems=await api("/api/opportunities");renderFeed()}catch(e){$("feedStatus").textContent="Unable to load feed results: "+e.message}}
 $("scanFeeds").addEventListener("click",async()=>{const b=$("scanFeeds");b.disabled=true;b.textContent="Scanning…";$("feedStatus").textContent="Checking configured RSS feeds. This may take a moment.";try{const data=await api("/api/opportunities/scan",{method:"POST"});feedItems=data.items||[];renderFeed();$("feedStatus").textContent="Scan finished · "+data.feedsFetched+" of "+data.feedsConfigured+" feeds fetched · "+feedItems.length+" items saved · "+data.scannedAt+(data.errors?.length?" · "+data.errors.length+" feed errors":"");if(data.errors?.length)showToast("Some RSS feeds failed; see status.");}catch(e){$("feedStatus").textContent="Feed scan failed: "+e.message;showToast("Feed scan failed")}finally{b.disabled=false;b.textContent="↻ Scan feeds"}});
-$("opportunityRows").addEventListener("click",async e=>{const b=e.target.closest("[data-save-opp]");if(!b)return;b.disabled=true;try{await api("/api/opportunities/"+encodeURIComponent(b.dataset.saveOpp)+"/save",{method:"POST"});showToast("Saved to Projects");await refresh();await loadFeed()}catch(err){showToast(err.message)}finally{b.disabled=false}});
+$("opportunityRows").addEventListener("click",async e=>{
+ const analyze=e.target.closest("[data-analyze-opp]");
+ if(analyze){
+  analyze.disabled=true;analyze.textContent="Analyzing…";
+  try{
+   const a=await api("/api/opportunities/"+encodeURIComponent(analyze.dataset.analyzeOpp)+"/analyze",{method:"POST"});
+   const risks=(a.risks||[]).map(x=>"<li>"+escapeHtml(x)+"</li>").join("")||"<li>No keyword-based risks detected.</li>";
+   const skills=(a.matchedSkills||[]).map(x=>"<span>"+escapeHtml(x)+"</span>").join("")||"<span>None detected</span>";
+   const signals=(a.complexitySignals||[]).map(x=>"<li>"+escapeHtml(x)+"</li>").join("")||"<li>None detected</li>";
+   $("analysisResults").innerHTML='<article class="analysis-card"><div class="analysis-head"><h3>Job Analysis</h3><strong>'+a.opportunityScore+'/100</strong></div><p><b>Recommendation:</b> '+escapeHtml(a.recommendation)+'</p><div class="analysis-grid"><div><small>Difficulty</small><b>'+escapeHtml(a.difficulty)+'</b></div><div><small>Estimated effort</small><b>'+a.estimatedHours+' hrs</b></div><div><small>Skill fit</small><b>'+a.skillFitScore+'/100</b></div><div><small>Budget/hour</small><b>'+(a.estimatedBudgetPerHour===null?"Not provided":"$"+a.estimatedBudgetPerHour)+'</b></div></div><p><b>Matched skills</b></p><div class="opportunity-skills">'+skills+'</div><p><b>Complexity signals</b></p><ul>'+signals+'</ul><p><b>Risk flags</b></p><ul>'+risks+'</ul><p class="analysis-note">'+escapeHtml(a.disclaimer)+'</p></article>';
+   $("analysisResults").scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(err){showToast("Analysis failed: "+err.message)}
+  finally{analyze.disabled=false;analyze.textContent="Analyze"}
+  return;
+ }
+ const b=e.target.closest("[data-save-opp]");if(!b)return;b.disabled=true;try{await api("/api/opportunities/"+encodeURIComponent(b.dataset.saveOpp)+"/save",{method:"POST"});showToast("Saved to Projects");await refresh();await loadFeed()}catch(err){showToast(err.message)}finally{b.disabled=false}
+});
 document.querySelectorAll('a[href="#jobfinder"]').forEach(a=>a.addEventListener("click",async()=>{$("jobfinder").classList.remove("hidden");setTimeout(()=>$("jobfinder").scrollIntoView({behavior:"smooth"}),10);await loadFeed()}));
 loadFeed();
