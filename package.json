@@ -1,10 +1,7 @@
 {
-  "name": "online-earning-agent",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Zero-cost-first freelancing opportunity assistant",
-  "type": "module",
-  "scripts": { "start": "node server/index.js", "dev": "node --watch server/index.js" },
-  "engines": { "node": ">=20" },
-  "dependencies": { "dotenv": "^16.4.7", "express": "^4.21.2", "rss-parser": "^3.13.0" }
+  "name":"online-earning-agent","version":"0.1.0","private":true,
+  "description":"Zero-cost-first freelancing opportunity assistant","type":"module",
+  "scripts":{"start":"node server/index.js","dev":"node --watch server/index.js"},
+  "engines":{"node":">=20"},
+  "dependencies":{"dotenv":"^16.4.7","express":"^4.21.2","rss-parser":"^3.13.0"}
 }
