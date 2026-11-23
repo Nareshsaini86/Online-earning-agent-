@@ -44,7 +44,7 @@ function renderFeed(){
  const tbody=$("opportunityRows"),empty=$("opportunityEmpty");
  if(!feedItems.length){tbody.innerHTML="";empty.classList.remove("hidden");return}
  empty.classList.add("hidden");
- tbody.innerHTML=feedItems.map(o=>'<tr><td>'+escapeHtml(o.title)+'<div class="opportunity-desc">'+escapeHtml((o.description||"").slice(0,240))+'</div>'+(o.matchedSkills?.length?'<div class="opportunity-skills">'+o.matchedSkills.slice(0,6).map(s=>'<span>'+escapeHtml(s)+'</span>').join("")+'</div>':'')+'</td><td>'+escapeHtml(o.source||"RSS")+'</td><td><span class="opportunity-score">'+(Number(o.score)||0)+' / 100</span></td><td>'+dateText(o.publishedAt)+'</td><td><div class="opportunity-actions"><a class="small-btn" target="_blank" rel="noopener noreferrer" href="'+escapeAttr(o.url)+'">Open</a><button class="small-btn" data-analyze-opp="'+escapeAttr(o.id)+'">Analyze</button><button class="small-btn" data-proposal-opp="'+escapeAttr(o.id)+'">Draft proposal</button><button class="small-btn" data-save-opp="'+escapeAttr(o.id)+'">Save project</button></div></td></tr>').join("");
+ tbody.innerHTML=feedItems.map(o=>'<tr><td>'+escapeHtml(o.title)+'<div class="opportunity-desc">'+escapeHtml((o.description||"").slice(0,240))+'</div>'+(o.matchedSkills?.length?'<div class="opportunity-skills">'+o.matchedSkills.slice(0,6).map(s=>'<span>'+escapeHtml(s)+'</span>').join("")+'</div>':'')+'</td><td>'+escapeHtml(o.source||"RSS")+'</td><td><span class="opportunity-score">'+(Number(o.score)||0)+' / 100</span></td><td>'+dateText(o.publishedAt)+'</td><td><div class="opportunity-actions"><a class="small-btn" target="_blank" rel="noopener noreferrer" href="'+escapeAttr(o.url)+'">Open</a><button class="small-btn" data-analyze-opp="'+escapeAttr(o.id)+'">Analyze</button><button class="small-btn" data-proposal-opp="'+escapeAttr(o.id)+'">Draft proposal</button><button class="small-btn" data-develop-opp="'+escapeAttr(o.id)+'">Development plan</button><button class="small-btn" data-save-opp="'+escapeAttr(o.id)+'">Save project</button></div></td></tr>').join("");
 }
 async function loadFeed(){try{feedItems=await api("/api/opportunities");renderFeed()}catch(e){$("feedStatus").textContent="Unable to load feed results: "+e.message}}
 $("scanFeeds").addEventListener("click",async()=>{const b=$("scanFeeds");b.disabled=true;b.textContent="Scanning…";$("feedStatus").textContent="Checking configured RSS feeds. This may take a moment.";try{const data=await api("/api/opportunities/scan",{method:"POST"});feedItems=data.items||[];renderFeed();$("feedStatus").textContent="Scan finished · "+data.feedsFetched+" of "+data.feedsConfigured+" feeds fetched · "+feedItems.length+" items saved · "+data.scannedAt+(data.errors?.length?" · "+data.errors.length+" feed errors":"");if(data.errors?.length)showToast("Some RSS feeds failed; see status.");}catch(e){$("feedStatus").textContent="Feed scan failed: "+e.message;showToast("Feed scan failed")}finally{b.disabled=false;b.textContent="↻ Scan feeds"}});
@@ -74,6 +74,21 @@ $("opportunityRows").addEventListener("click",async e=>{
    $("analysisResults").scrollIntoView({behavior:"smooth",block:"start"});
   }catch(err){showToast("Proposal draft failed: "+err.message)}
   finally{proposal.disabled=false;proposal.textContent="Draft proposal"}
+  return;
+ }
+ const develop=e.target.closest("[data-develop-opp]");
+ if(develop){
+  develop.disabled=true;develop.textContent="Planning…";
+  try{
+   const p=await api("/api/opportunities/"+encodeURIComponent(develop.dataset.developOpp)+"/development-plan",{method:"POST"});
+   const tasks=(p.tasks||[]).map(t=>"<li><b>"+escapeHtml(t.phase)+":</b> "+escapeHtml(t.task)+"</li>").join("");
+   const files=(p.suggestedFiles||[]).map(f=>"<li><code>"+escapeHtml(f)+"</code></li>").join("");
+   const areas=(p.detectedAreas||[]).map(a=>"<span>"+escapeHtml(a)+"</span>").join("")||"<span>General project</span>";
+   $("analysisResults").innerHTML='<article class="analysis-card dev-plan-card"><div class="analysis-head"><h3>Development Plan</h3><strong>'+p.estimatedHours+' estimated hours</strong></div><p>'+escapeHtml(p.summary)+'</p><p><b>Detected areas</b></p><div class="opportunity-skills">'+areas+'</div><p><b>Tasks</b></p><ol>'+tasks+'</ol><p><b>Suggested file structure</b></p><ul>'+files+'</ul><p><b>Assumptions</b></p><ul>'+(p.assumptions||[]).map(x=>"<li>"+escapeHtml(x)+"</li>").join("")+'</ul><p class="analysis-note">'+escapeHtml(p.safeMode)+'</p><button class="small-btn" id="copyDevPlan">Copy plan</button></article>';
+   $("copyDevPlan").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(JSON.stringify(p,null,2));showToast("Plan copied")}catch{showToast("Select and copy the plan manually")}});
+   $("analysisResults").scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(err){showToast("Development plan failed: "+err.message)}
+  finally{develop.disabled=false;develop.textContent="Development plan"}
   return;
  }
  const b=e.target.closest("[data-save-opp]");if(!b)return;b.disabled=true;try{await api("/api/opportunities/"+encodeURIComponent(b.dataset.saveOpp)+"/save",{method:"POST"});showToast("Saved to Projects");await refresh();await loadFeed()}catch(err){showToast(err.message)}finally{b.disabled=false}
