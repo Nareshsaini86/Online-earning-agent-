@@ -1,44 +1,35 @@
 # Online Earning Agent (AI Freelance Assistant)
 
-A zero-cost-first, self-hostable workspace for collecting software freelance opportunities, tracking projects, and preparing proposals. This project is being built in stages.
+A zero-cost-first freelancing workspace designed around software projects (.NET, C#, ASP.NET Core, SQL, APIs).
 
-## Step 2 — Dashboard (implemented)
-- Responsive mobile and desktop dashboard
-- Project create, edit, delete
-- Project statuses: New, Analyzing, Proposal, In Progress, Completed, Rejected
-- Search projects and filter by status
-- Summary cards for project counts and potential budget (not actual income)
-- Project fields: title, client, source, budget (USD), URL, description
-- Express API and local JSON persistence
-- Health endpoint
+## Run locally
+Requires Node.js 20+.
+1. Clone the repository.
+2. Run `npm install`.
+3. Run `npm start`.
+4. Open `http://localhost:3000`.
 
-## Quick start
-1. Install Node.js 20 or newer.
-2. Clone this repository.
-3. Run `npm install`.
-4. Run `npm start`.
-5. Open `http://localhost:3000`.
-
-No AI provider key is needed to run the dashboard. `.env` is optional for the dashboard. Do not commit credentials.
+## Step 2 — Dashboard
+- Responsive workspace UI
+- Project/opportunity add, edit, delete
+- Status tracking (New, Analyzing, Proposal, In Progress, Completed, Rejected)
+- Search and status filtering
+- Total, active, completed, and potential-budget metrics
+- Persistent local JSON storage (`data/projects.json)
 
 ## API
-- `GET /api/health` — server health
-- `GET /api/projects` — list projects
-- `POST /api/projects` — create project
-- `PATCH /api/projects/:id` — update project
-- `DELETE /api/projects/:id` — delete project
-- `GET /api/dashboard` — project summary
+- `GET /api/health`
+- `GET /api/projects`
+- `POST /api/projects`
+- `PATCH /api/projects/:id`
+- `DELETE /api/projects/:id`
+- `GET /api/dashboard`
 
-## Safety and limitations
-- This is a project tracker, not a guaranteed income bot.
-- Project data is stored in a local JSON file in the server's `data/` directory. On some hosting platforms, ephemeral filesystems may reset; persistent storage is required for reliable hosted use.
-- No automatic client messages, applications, contract acceptance, project delivery, or payments are enabled.
-- Opportunity sources and integrations will be added in later steps, using official APIs, feeds, or permitted methods. Never bypass platform login, CAPTCHA, or anti-bot controls.
-- AI features will be optional and must be configured separately. API usage may incur fees; no paid services should be enabled without approval.
+## Step 3 — Job Finder (in progress)
+Opportunity discovery is being added using RSS feeds and user-provided links. Feed availability, terms, and relevance vary; this is not guaranteed access to Upwork or Fiverr listings.
 
-## Roadmap
-- Step 2: Dashboard and project management — implemented
-- Next: job discovery feeds and opportunity analysis
-- Later: proposal drafting, approved coding workspace/test runner, notifications, and permitted platform integrations
-
-Review all job details and proposals before submitting. Earnings are not guaranteed.
+## Safety and cost
+- AI APIs are optional and not enabled by default. Provider use may incur charges.
+- Do not bypass login, CAPTCHA, anti-bot controls, or platform restrictions.
+- The app does not auto-apply, send client messages, accept contracts, deliver work, or pay for services.
+- This MVP is not secured for public hosting. Add authentication and secure deployment before exposing it online.
