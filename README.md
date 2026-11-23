@@ -35,7 +35,9 @@ Zero-cost-first freelance workspace built around software development skills (.N
 - No AI API key is configured or required for the dashboard/feed scanner.
 - RSS access only; do not bypass login, CAPTCHA, anti-bot controls, or marketplace restrictions.
 - No automatic applications, client messages, contract acceptance, delivery, or payments.
-- This local MVP is not ready for public hosting. Add authentication and security hardening before exposing it.
+- Public deployment is configured with HTTP Basic authentication (`DASHBOARD_USER`/`DASHBOARD_PASSWORD`). Set strong credentials before deployment.
+- Render Blueprint is provided in `render.yaml`. Cloud filesystem scanning/editing is disabled by default (`ENABLE_FILESYSTEM_WORKSPACE=false`).
+- Free hosting uses ephemeral storage; projects/opportunities can be lost on restart or redeploy. Use a persistent database/storage before relying on cloud data.
 
 ## Step 4 — Job Analyzer (rule-based, zero-cost)
 - Analyze a saved RSS opportunity using local keyword rules; no AI API or paid service required.
@@ -103,3 +105,12 @@ Zero-cost-first freelance workspace built around software development skills (.N
 - `POST /api/fs/bug-fix` accepts a file path and bug description, returns AI replacement draft with original content; draft is not applied unless user loads it into editor and presses Save.
 - Text edit extensions are allow-listed; path traversal and symlink escape paths are blocked. Filesystem workspace is local-only and server binds to `127.0.0.1` by default. Do not expose publicly or set `HOST=0.0.0.0` without adding authentication and appropriate access controls.
 - AI Bug Fix requires provider configuration and can incur API charges. Source is not executed as part of scanning or AI analysis.
+
+## Render deployment
+1. Open Render dashboard and choose **New → Blueprint**.
+2. Connect this repository and select the branch containing `render.yaml`; Render will create the web service from the blueprint.
+3. Set `DASHBOARD_USER` and `DASHBOARD_PASSWORD` in the service environment to unique strong values. Optionally set `AI_API_KEY` only if you accept provider costs.
+4. Wait for deploy to finish, then open the Render-provided URL. Browser will request Basic Auth credentials.
+5. Health endpoint: `/api/health`.
+
+Render Free web services may spin down when idle, and their local filesystem is ephemeral. Cloud mode disables the real filesystem scanner/edit endpoints; project workspace features use local JSON and are not durable on the free instance. Add persistent database/storage before production use.
