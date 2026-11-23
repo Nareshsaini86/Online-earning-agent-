@@ -1,6 +1,6 @@
 // Zero-cost, rule-based opportunity analysis. No external AI/API calls.
 const skillPatterns = [
-  { label: ".NET / C#", re: /\\.net|asp\\.net|c#|dotnet/i },
+  { label: ".NET / C#", re: /\.net|asp\.net|c#|dotnet/i },
   { label: "SQL / Database", re: /sql|database|mysql|postgres|mongodb/i },
   { label: "API / Backend", re: /api|backend|rest|integration|server/i },
   { label: "Frontend", re: /react|angular|javascript|html|css|frontend|ui/i },
@@ -28,7 +28,7 @@ export function analyzeOpportunity(item = {}) {
   const matchedSkills = skillPatterns.filter(s => s.re.test(text)).map(s => s.label);
   const risks = riskPatterns.filter(r => r.re.test(text)).map(r => r.label);
   const complexity = complexityPatterns.filter(c => c.re.test(text));
-  const wordCount = text.trim().split(/\\s+/).filter(Boolean).length;
+  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
   const estimatedHours = Math.max(2, Math.min(120, 3 + complexity.reduce((sum, c) => sum + c.hours, 0) + Math.ceil(wordCount / 180)));
   const difficulty = complexity.length >= 5 || risks.includes("Large scope signal") ? "High" : complexity.length >= 2 ? "Medium" : "Low";
   const skillFit = Math.min(100, matchedSkills.reduce((sum, s) => sum + (s === ".NET / C#" ? 30 : s === "SQL / Database" ? 20 : s === "API / Backend" ? 20 : 10), 0));
