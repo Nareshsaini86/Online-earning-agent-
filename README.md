@@ -86,3 +86,9 @@ Zero-cost-first freelance workspace built around software development skills (.N
 - API: `POST /api/projects/:id/tasks/:taskId/ai-draft`
 - Requires configured AI provider key; calls may incur charges.
 - Draft is not executed, written into source files, or tested automatically. Human review is required.
+
+## Step 10 — Task-level AI Developer Drafts
+- Each task in the Task Queue has an `AI draft` action.
+- The engine sends project context and task details to the configured OpenAI-compatible model and stores the draft on that task.
+- API: `POST /api/projects/:id/tasks/:taskId/ai-draft`
+- The generated code remains an editable draft in the dashboard. It is not automatically written into files or executed. AI usage may incur API charges.
