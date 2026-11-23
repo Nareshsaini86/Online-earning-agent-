@@ -28,6 +28,7 @@ Zero-cost-first freelance workspace built around software development skills (.N
 - `GET /api/health`
 - `GET /api/projects`, `POST /api/projects`, `PATCH /api/projects/:id`, `DELETE /api/projects/:id`
 - `GET /api/dashboard`
+- `GET /api/projects/:id/tasks`, `POST /api/projects/:id/tasks`, `PATCH /api/projects/:id/tasks/:taskId`
 - `GET /api/opportunities`, `POST /api/opportunities/scan`, `POST /api/opportunities/:id/save`
 
 ## Safety & cost
@@ -70,3 +71,10 @@ Zero-cost-first freelance workspace built around software development skills (.N
 - Job Finder includes an `AI code` action; output is editable and copyable, but never executed by the app.
 - API: `POST /api/opportunities/:id/ai-code`
 - Review AI output and test it locally before client use. Human approval remains required for any client contact or delivery.
+
+## Step 9 — Project Task Queue
+- Add task checklists to each saved project and track Pending, In Progress, Done, or Blocked.
+- Task data persists in the existing local projects JSON file.
+- Project selector keeps queues separated; status changes are saved immediately.
+- API: `GET/POST /api/projects/:id/tasks`, `PATCH /api/projects/:id/tasks/:taskId`
+- Tasks are manually added; this stage does not auto-execute code, commands, or client actions.
