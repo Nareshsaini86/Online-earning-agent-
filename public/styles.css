@@ -5,3 +5,5 @@
 .proposal-card textarea{resize:vertical;min-height:240px}.proposal-card .opportunity-actions{margin:12px 0}.proposal-card .analysis-head{gap:10px;flex-wrap:wrap}
 
 .dev-plan-card ol,.dev-plan-card ul{padding-left:20px;margin:8px 0 14px;color:#526079;font-size:12px;line-height:1.6}.dev-plan-card li{margin:4px 0}.dev-plan-card code{overflow-wrap:anywhere}.dev-plan-card .analysis-head{gap:10px;flex-wrap:wrap}
+
+.code-output pre{background:#101827;color:#dce5f3;border-radius:10px;padding:12px;overflow:auto;max-height:420px;font-size:12px;line-height:1.5;white-space:pre}.generated-file{border:1px solid var(--border,#e4e8ef);border-radius:10px;padding:10px;margin:12px 0}.generated-file .analysis-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
