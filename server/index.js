@@ -7,6 +7,7 @@ import { analyzeOpportunity } from './analyzer.js';
 import { createProposal } from './proposal.js';
 import { createDevelopmentPlan } from './developer-agent.js';
 import { generateStarterCode } from './code-generator.js';
+import { generateWithAI } from './ai-engine.js';
 import { randomUUID } from 'node:crypto';
 
 const app = express();
@@ -64,6 +65,19 @@ app.get('/api/dashboard', async (_req, res, next) => {
 app.get('/api/opportunities', async (_req,res,next)=>{try{res.json(await listOpportunities())}catch(e){next(e)}});
 app.post('/api/opportunities/scan', async (_req,res,next)=>{try{res.json(await scanFeeds())}catch(e){next(e)}});
 app.post('/api/opportunities/:id/save', async (req,res,next)=>{try{const items=await listOpportunities(),item=items.find(x=>x.id===req.params.id);if(!item)return res.status(404).json({error:'Opportunity not found'});const projects=await readProjects();if(projects.some(p=>p.url===item.url))return res.status(409).json({error:'Already saved as a project'});const project={id:randomUUID(),title:item.title,client:'',source:item.source||'RSS',budget:0,description:item.description||'',status:'New',url:item.url,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};projects.unshift(project);await writeProjects(projects);item.status='saved';await fs.writeFile(path.join(DATA_DIR,'opportunities.json'),JSON.stringify(items,null,2));res.status(201).json(project)}catch(e){next(e)}});
+
+app.post('/api/opportunities/:id/ai-code', async (req, res, next) => {
+  try {
+    const items = await listOpportunities();
+    const item = items.find(x => x.id === req.params.id);
+    if (!item) return res.status(404).json({ error: 'Opportunity not found.' });
+    const result = await generateWithAI({ title: item.title, description: item.description, mode: 'code' });
+    item.aiCodeDraft = result;
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    await fs.writeFile(path.join(DATA_DIR, 'opportunities.json'), JSON.stringify(items, null, 2), 'utf8');
+    res.json(result);
+  } catch (e) { res.status(e.status || 500).json({ error: e.message || 'AI generation failed.' }); }
+});
 
 app.post('/api/opportunities/:id/generate-code', async (req, res, next) => {
   try {
