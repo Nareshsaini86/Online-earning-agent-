@@ -78,3 +78,11 @@ Zero-cost-first freelance workspace built around software development skills (.N
 - Project selector keeps queues separated; status changes are saved immediately.
 - API: `GET/POST /api/projects/:id/tasks`, `PATCH /api/projects/:id/tasks/:taskId`
 - Tasks are manually added; this stage does not auto-execute code, commands, or client actions.
+
+## Step 10 — Task AI Developer Engine
+- Generate an AI coding draft for a specific project task.
+- Includes project title/requirements and selected task in the prompt.
+- Draft is stored on the task as `aiDraft` and is editable/copyable in the UI.
+- API: `POST /api/projects/:id/tasks/:taskId/ai-draft`
+- Requires configured AI provider key; calls may incur charges.
+- Draft is not executed, written into source files, or tested automatically. Human review is required.
