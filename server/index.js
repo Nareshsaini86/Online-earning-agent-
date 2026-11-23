@@ -2,12 +2,12 @@ import 'dotenv/config';
 import express from 'express';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 const DATA_DIR = path.resolve('data');
 const DATA_FILE = path.join(DATA_DIR, 'projects.json');
-
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static('public'));
 
@@ -30,7 +30,8 @@ app.post('/api/projects', async (req, res, next) => {
     if (!String(title || '').trim()) return res.status(400).json({ error: 'Project title is required.' });
     if (!statuses.includes(status)) return res.status(400).json({ error: 'Invalid status.' });
     const projects = await readProjects();
-    const project = { id: crypto.randomUUID(), title: String(title).trim(), client: String(client).trim(), source: String(source).trim(), budget: Math.max(0, Number(budget) || 0), description: String(description).trim(), status, url: String(url).trim(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    const now = new Date().toISOString();
+    const project = { id: randomUUID(), title: String(title).trim(), client: String(client).trim(), source: String(source).trim(), budget: Math.max(0, Number(budget) || 0), description: String(description).trim(), status, url: String(url).trim(), createdAt: now, updatedAt: now };
     projects.unshift(project); await writeProjects(projects); res.status(201).json(project);
   } catch (e) { next(e); }
 });
@@ -40,6 +41,7 @@ app.patch('/api/projects/:id', async (req, res, next) => {
     if (index < 0) return res.status(404).json({ error: 'Project not found.' });
     const updates = req.body || {};
     if (updates.status && !statuses.includes(updates.status)) return res.status(400).json({ error: 'Invalid status.' });
+    if ('title' in updates && !String(updates.title || '').trim()) return res.status(400).json({ error: 'Project title is required.' });
     const allowed = ['title','client','source','budget','description','status','url'];
     for (const key of allowed) if (key in updates) projects[index][key] = key === 'budget' ? Math.max(0, Number(updates[key]) || 0) : String(updates[key]).trim();
     projects[index].updatedAt = new Date().toISOString(); await writeProjects(projects); res.json(projects[index]);
@@ -54,6 +56,4 @@ app.get('/api/dashboard', async (_req, res, next) => {
   catch (e) { next(e); }
 });
 app.use((err, _req, res, _next) => { console.error(err); res.status(500).json({ error: 'Unexpected server error.' }); });
-import { randomUUID as cryptoRandomUUID } from 'node:crypto';
-globalThis.crypto ||= { randomUUID: cryptoRandomUUID };
 app.listen(PORT, () => console.log(`Online Earning Agent dashboard listening on http://localhost:${PORT}`));
