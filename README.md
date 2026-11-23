@@ -35,3 +35,10 @@ Zero-cost-first freelance workspace built around software development skills (.N
 - RSS access only; do not bypass login, CAPTCHA, anti-bot controls, or marketplace restrictions.
 - No automatic applications, client messages, contract acceptance, delivery, or payments.
 - This local MVP is not ready for public hosting. Add authentication and security hardening before exposing it.
+
+## Step 4 — Job Analyzer (rule-based, zero-cost)
+- Analyze a saved RSS opportunity using local keyword rules; no AI API or paid service required.
+- Shows difficulty, rough hours, skill-fit score, opportunity score, recommendation, complexity signals and risk flags.
+- Analysis is stored with the opportunity in `data/opportunities.json`.
+- API: `POST /api/opportunities/:id/analyze`
+- Estimates are heuristic only and should not replace reading the full scope or checking the client.
