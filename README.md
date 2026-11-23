@@ -55,3 +55,10 @@ Zero-cost-first freelance workspace built around software development skills (.N
 - Copy the plan for later use; it does not create files, execute code, or contact clients.
 - API: `POST /api/opportunities/:id/development-plan`
 - This is a planning assistant, not an AI code-writing model yet.
+
+## Step 7 — Starter Code Workspace
+- Generate editable starter code from a saved opportunity.
+- Current templates: ASP.NET Core starter (detected from requirements) or generic web starter.
+- Generated file drafts appear in the opportunity panel and can be copied individually or together.
+- API: `POST /api/opportunities/:id/generate-code`
+- Generated drafts are not executed, written to disk, tested, or production-ready. Review before use.
