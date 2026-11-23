@@ -22,6 +22,7 @@ const DASHBOARD_USER = process.env.DASHBOARD_USER || '';
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || '';
 if (process.env.NODE_ENV === 'production' && (!DASHBOARD_USER || !DASHBOARD_PASSWORD)) throw new Error('DASHBOARD_USER and DASHBOARD_PASSWORD must be set in production.');
 app.use((req,res,next)=>{
+  if(req.path === '/api/health') return next();
   if(!DASHBOARD_USER || !DASHBOARD_PASSWORD) return next();
   const header=req.headers.authorization||'',match=header.match(/^Basic\\s+(.+)$/i);
   if(match){try{const decoded=Buffer.from(match[1],'base64').toString('utf8'),i=decoded.indexOf(':');if(i>=0&&decoded.slice(0,i)===DASHBOARD_USER&&decoded.slice(i+1)===DASHBOARD_PASSWORD)return next();}catch{}}
