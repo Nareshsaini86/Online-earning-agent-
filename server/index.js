@@ -57,6 +57,26 @@ app.delete('/api/projects/:id', async (req, res, next) => {
   try { const projects = await readProjects(); const nextList = projects.filter(p => p.id !== req.params.id); if (nextList.length === projects.length) return res.status(404).json({ error: 'Project not found.' }); await writeProjects(nextList); res.status(204).end(); }
   catch (e) { next(e); }
 });
+app.get('/api/projects/:id/tasks', async (req, res, next) => {
+  try { const projects = await readProjects(); const p = projects.find(x => x.id === req.params.id); if (!p) return res.status(404).json({ error: 'Project not found.' }); res.json(p.tasks || []); }
+  catch (e) { next(e); }
+});
+app.post('/api/projects/:id/tasks', async (req, res, next) => {
+  try {
+    const task = String(req.body?.task || '').trim(); if (!task) return res.status(400).json({ error: 'Task text is required.' });
+    const projects = await readProjects(); const p = projects.find(x => x.id === req.params.id); if (!p) return res.status(404).json({ error: 'Project not found.' });
+    p.tasks = p.tasks || []; const item = { id: randomUUID(), task: task.slice(0, 1000), status: 'Pending', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    p.tasks.unshift(item); p.updatedAt = new Date().toISOString(); await writeProjects(projects); res.status(201).json(item);
+  } catch (e) { next(e); }
+});
+app.patch('/api/projects/:id/tasks/:taskId', async (req, res, next) => {
+  try {
+    const status = String(req.body?.status || ''); if (!['Pending','In Progress','Done','Blocked'].includes(status)) return res.status(400).json({ error: 'Invalid task status.' });
+    const projects = await readProjects(); const p = projects.find(x => x.id === req.params.id); if (!p) return res.status(404).json({ error: 'Project not found.' });
+    const task = (p.tasks || []).find(x => x.id === req.params.taskId); if (!task) return res.status(404).json({ error: 'Task not found.' });
+    task.status = status; task.updatedAt = new Date().toISOString(); p.updatedAt = task.updatedAt; await writeProjects(projects); res.json(task);
+  } catch (e) { next(e); }
+});
 app.get('/api/dashboard', async (_req, res, next) => {
   try { const projects = await readProjects(); res.json({ total: projects.length, active: projects.filter(p => ['Analyzing','Proposal','In Progress'].includes(p.status)).length, completed: projects.filter(p => p.status === 'Completed').length, budget: projects.filter(p => p.status !== 'Rejected').reduce((sum,p) => sum + (Number(p.budget)||0), 0), projects }); }
   catch (e) { next(e); }
