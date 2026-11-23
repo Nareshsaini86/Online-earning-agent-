@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { listOpportunities, scanFeeds } from './scanner.js';
 import { randomUUID } from 'node:crypto';
 
 const app = express();
@@ -55,5 +56,10 @@ app.get('/api/dashboard', async (_req, res, next) => {
   try { const projects = await readProjects(); res.json({ total: projects.length, active: projects.filter(p => ['Analyzing','Proposal','In Progress'].includes(p.status)).length, completed: projects.filter(p => p.status === 'Completed').length, budget: projects.filter(p => p.status !== 'Rejected').reduce((sum,p) => sum + (Number(p.budget)||0), 0), projects }); }
   catch (e) { next(e); }
 });
+
+app.get('/api/opportunities', async (_req,res,next)=>{try{res.json(await listOpportunities())}catch(e){next(e)}});
+app.post('/api/opportunities/scan', async (_req,res,next)=>{try{res.json(await scanFeeds())}catch(e){next(e)}});
+app.post('/api/opportunities/:id/save', async (req,res,next)=>{try{const items=await listOpportunities(),item=items.find(x=>x.id===req.params.id);if(!item)return res.status(404).json({error:'Opportunity not found'});const projects=await readProjects();if(projects.some(p=>p.url===item.url))return res.status(409).json({error:'Already saved as a project'});const project={id:crypto.randomUUID(),title:item.title,client:'',source:item.source||'RSS',budget:0,description:item.description||'',status:'New',url:item.url,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};projects.unshift(project);await writeProjects(projects);item.status='saved';await fs.writeFile(path.join(DATA_DIR,'opportunities.json'),JSON.stringify(items,null,2));res.status(201).json(project)}catch(e){next(e)}});
+
 app.use((err, _req, res, _next) => { console.error(err); res.status(500).json({ error: 'Unexpected server error.' }); });
 app.listen(PORT, () => console.log(`Online Earning Agent dashboard listening on http://localhost:${PORT}`));
