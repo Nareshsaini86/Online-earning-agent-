@@ -134,7 +134,7 @@ async function loadTasks(projectId){
  try{
   const tasks=await api("/api/projects/"+encodeURIComponent(projectId)+"/tasks");
   $("taskStatus").textContent=tasks.length+" task(s) · status changes are saved immediately";
-  $("taskList").innerHTML=tasks.length?tasks.map(t=>'<article class="task-row"><div><strong>'+escapeHtml(t.task)+'</strong><small>Added '+dateText(t.createdAt)+'</small></div><button class="small-btn" data-ai-task="'+escapeAttr(t.id)+'">AI draft</button><select data-task-status="'+escapeAttr(t.id)+'"><option'+(t.status==="Pending"?" selected":"")+'>Pending</option><option'+(t.status==="In Progress"?" selected":"")+'>In Progress</option><option'+(t.status==="Done"?" selected":"")+'>Done</option><option'+(t.status==="Blocked"?" selected":"")+'>Blocked</option></select><button class="small-btn" data-task-ai="'+escapeAttr(t.id)+'">AI Draft</button></article>').join(""):'<p class="task-empty">No tasks yet. Add your first task above.</p>';
+  $("taskList").innerHTML=tasks.length?tasks.map(t=>'<article class="task-row"><div><strong>'+escapeHtml(t.task)+'</strong><small>Added '+dateText(t.createdAt)+'</small></div><button class="small-btn" data-ai-task="'+escapeAttr(t.id)+'">AI draft</button><select data-task-status="'+escapeAttr(t.id)+'"><option'+(t.status==="Pending"?" selected":"")+'>Pending</option><option'+(t.status==="In Progress"?" selected":"")+'>In Progress</option><option'+(t.status==="Done"?" selected":"")+'>Done</option><option'+(t.status==="Blocked"?" selected":"")+'>Blocked</option></select></article>').join(""):'<p class="task-empty">No tasks yet. Add your first task above.</p>';
  }catch(e){$("taskStatus").textContent="Could not load tasks: "+e.message}
 }
 $("taskProject").addEventListener("change",e=>loadTasks(e.target.value));
@@ -160,13 +160,3 @@ $("taskList").addEventListener("click",async e=>{
  finally{btn.disabled=false;btn.textContent="AI draft"}
 });
 
-$("taskList").addEventListener("click",async e=>{
- const btn=e.target.closest("[data-task-ai]");if(!btn)return;const projectId=$("taskProject").value;btn.disabled=true;btn.textContent="Generating…";
- try{
-  const draft=await api("/api/projects/"+encodeURIComponent(projectId)+"/tasks/"+encodeURIComponent(btn.dataset.taskAi)+"/ai-draft",{method:"POST",body:JSON.stringify({context:""})});
-  $("taskDraft").innerHTML='<article class="analysis-card ai-code-card"><div class="analysis-head"><h3>Task AI Draft</h3><strong>'+escapeHtml(draft.model||"AI")+'</strong></div><p>'+escapeHtml(draft.notice||"Review and test before use.")+'</p><textarea id="taskDraftText" rows="20" spellcheck="false"></textarea><button class="small-btn" id="copyTaskDraft">Copy draft</button></article>';
-  $("taskDraftText").value=draft.content||"";
-  $("copyTaskDraft").addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("taskDraftText").value);showToast("Task draft copied")}catch{showToast("Clipboard unavailable")}});
-  $("taskDraft").scrollIntoView({behavior:"smooth",block:"start"});
- }catch(err){showToast("AI task drafting failed: "+err.message)}finally{btn.disabled=false;btn.textContent="AI Draft"}
-});
