@@ -48,3 +48,10 @@ Zero-cost-first freelance workspace built around software development skills (.N
 - Editable proposal text, copy button, and client clarification questions.
 - No paid AI API, auto-send, or application submission.
 - API: `POST /api/opportunities/:id/draft-proposal`
+
+## Step 6 — Development Planner (zero-cost, safe mode)
+- Builds a structured plan from the opportunity title/description using keyword rules.
+- Displays task phases, detected areas, heuristic effort estimate, and suggested file structure.
+- Copy the plan for later use; it does not create files, execute code, or contact clients.
+- API: `POST /api/opportunities/:id/development-plan`
+- This is a planning assistant, not an AI code-writing model yet.
