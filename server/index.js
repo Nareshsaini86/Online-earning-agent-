@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { listOpportunities, scanFeeds } from './scanner.js';
 import { analyzeOpportunity } from './analyzer.js';
+import { createProposal } from './proposal.js';
 import { randomUUID } from 'node:crypto';
 
 const app = express();
@@ -71,6 +72,18 @@ app.post('/api/opportunities/:id/analyze', async (req, res, next) => {
     await fs.mkdir(DATA_DIR, { recursive: true });
     await fs.writeFile(path.join(DATA_DIR, 'opportunities.json'), JSON.stringify(items, null, 2), 'utf8');
     res.json(item.analysis);
+  } catch (e) { next(e); }
+});
+
+app.post('/api/opportunities/:id/draft-proposal', async (req, res, next) => {
+  try {
+    const items = await listOpportunities();
+    const item = items.find(x => x.id === req.params.id);
+    if (!item) return res.status(404).json({ error: 'Opportunity not found.' });
+    item.proposalDraft = createProposal(item);
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    await fs.writeFile(path.join(DATA_DIR, 'opportunities.json'), JSON.stringify(items, null, 2), 'utf8');
+    res.json(item.proposalDraft);
   } catch (e) { next(e); }
 });
 
