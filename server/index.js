@@ -141,6 +141,40 @@ app.get('/api/projects/:id/workspace.zip', async (req, res, next) => {
     archive.finalize();
   } catch (e) { next(e); }
 });
+// Step 12: real filesystem project scanner, bounded to configured project root.
+const PROJECT_ROOT = path.resolve(process.env.PROJECT_ROOT || process.cwd());
+const ignoredFolders = new Set(['.git','node_modules','.next','dist','build','coverage','.idea','.vscode']);
+const ignoredFiles = new Set(['.env','.env.local','.env.production','id_rsa','id_ed25519']);
+const allowedTextExtensions = new Set(['.js','.mjs','.cjs','.ts','.tsx','.jsx','.cs','.sql','.json','.html','.css','.scss','.md','.txt','.xml','.yml','.yaml','.config','.csproj','.sln','.sh','.ps1']);
+function resolveProjectFile(rel) {
+  if(typeof rel!=='string'||!rel.trim()||rel.length>600||path.isAbsolute(rel))throw new Error('Invalid relative file path.');
+  const absolute=path.resolve(PROJECT_ROOT,rel);
+  if(absolute!==PROJECT_ROOT&&!absolute.startsWith(PROJECT_ROOT+path.sep))throw new Error('Path outside project root blocked.');
+  const segments=rel.replace(/\\/g,'/').split('/');
+  if(segments.some(s=>!s||s==='.'||s==='..'||s.startsWith('.env')))throw new Error('Unsafe path segment.');
+  if(ignoredFiles.has(path.basename(absolute)))throw new Error('Sensitive file blocked.');
+  return absolute;
+}
+async function scanProjectTree(dir=PROJECT_ROOT,depth=0,items=[],relBase=PROJECT_ROOT){
+  if(depth>9||items.length>350)return items;
+  let entries=[];try{entries=await fs.readdir(dir,{withFileTypes:true});}catch{return items}
+  entries.sort((a,b)=>a.name.localeCompare(b.name));
+  for(const entry of entries){
+    if(items.length>=350)break;
+    if(entry.name.startsWith('.')||ignoredFolders.has(entry.name)||ignoredFiles.has(entry.name))continue;
+    const full=path.join(dir,entry.name), rel=path.relative(relBase,full);
+    try{
+      const st=await fs.lstat(full); if(st.isSymbolicLink())continue;
+      if(st.isDirectory()){items.push({path:rel,type:'directory'});await scanProjectTree(full,depth+1,items,relBase);}
+      else if(st.isFile())items.push({path:rel,type:'file',size:st.size,editable:allowedTextExtensions.has(path.extname(entry.name).toLowerCase())&&st.size<=300000});
+    }catch{}
+  }
+  return items;
+}
+app.get('/api/fs/scan',async(_req,res,next)=>{try{res.json({rootName:path.basename(PROJECT_ROOT),files:await scanProjectTree()})}catch(e){next(e)}});
+app.get('/api/fs/file',async(req,res,next)=>{try{const absolute=resolveProjectFile(req.query.path);const st=await fs.lstat(absolute);if(!st.isFile()||st.size>300000||!allowedTextExtensions.has(path.extname(absolute).toLowerCase()))return res.status(400).json({error:'File is not an editable text file or exceeds 300 KB.'});res.json({path:req.query.path,content:await fs.readFile(absolute,'utf8')});}catch(e){res.status(400).json({error:e.message})}});
+app.put('/api/fs/file',async(req,res,next)=>{try{const absolute=resolveProjectFile(req.body?.path),content=String(req.body?.content??'');if(content.length>300000)return res.status(413).json({error:'File exceeds 300 KB.'});if(!allowedTextExtensions.has(path.extname(absolute).toLowerCase()))return res.status(400).json({error:'Extension not allowed for editing.'});const st=await fs.lstat(absolute);if(!st.isFile()||st.isSymbolicLink())return res.status(400).json({error:'Only existing regular files can be updated.'});await fs.writeFile(absolute,content,'utf8');res.json({saved:true,path:req.body.path});}catch(e){res.status(400).json({error:e.message})}});
+app.post('/api/fs/bug-fix',async(req,res,next)=>{try{const rel=String(req.body?.path||''),bug=String(req.body?.problem||'').trim().slice(0,6000);if(!bug)return res.status(400).json({error:'Describe the error or bug.'});const absolute=resolveProjectFile(rel),st=await fs.lstat(absolute);if(!st.isFile()||st.size>300000||!allowedTextExtensions.has(path.extname(absolute).toLowerCase()))return res.status(400).json({error:'File is not a supported text file.'});const original=await fs.readFile(absolute,'utf8');const prompt='Review and fix this code. User reported problem: '+bug+'\\nProject file: '+rel+'\\nCurrent code:\\n'+original.slice(0,25000)+'\\nReturn only a complete replacement file, no markdown fences. Keep unrelated code intact. Do not invent APIs; include a short explanation after the code only if impossible to fit as comments.';const ai=await generateWithAI({title:'Bug fix: '+rel,description:prompt,mode:'code'});res.json({path:rel,original,content:ai.content,model:ai.model});}catch(e){res.status(e.status||500).json({error:e.message||'AI bug fix failed.'})}});
 app.get('/api/dashboard', async (_req, res, next) => {
   try { const projects = await readProjects(); res.json({ total: projects.length, active: projects.filter(p => ['Analyzing','Proposal','In Progress'].includes(p.status)).length, completed: projects.filter(p => p.status === 'Completed').length, budget: projects.filter(p => p.status !== 'Rejected').reduce((sum,p) => sum + (Number(p.budget)||0), 0), projects }); }
   catch (e) { next(e); }
