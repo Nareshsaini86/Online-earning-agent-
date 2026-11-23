@@ -16,7 +16,7 @@ function render(){
 }
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function escapeAttr(value){return escapeHtml(value);}
-async function refresh(){try{allProjects=await api('/api/projects');render()}catch(e){showToast('Could not load projects: '+e.message)}}
+async function refresh(){try{allProjects=await api('/api/projects');render();refreshTaskProjects()}catch(e){showToast('Could not load projects: '+e.message)}}
 function openModal(project=null){
  $('projectForm').reset(); $('projectId').value=project?.id||''; $('modalTitle').textContent=project?'Edit project':'Add project';
  $('title').value=project?.title||''; $('client').value=project?.client||''; $('source').value=project?.source||'Manual'; $('budgetInput').value=project?.budget??0; $('statusInput').value=project?.status||'New'; $('url').value=project?.url||''; $('description').value=project?.description||'';
@@ -122,3 +122,27 @@ $("opportunityRows").addEventListener("click",async e=>{
 });
 document.querySelectorAll('a[href="#jobfinder"]').forEach(a=>a.addEventListener("click",async()=>{$("jobfinder").classList.remove("hidden");setTimeout(()=>$("jobfinder").scrollIntoView({behavior:"smooth"}),10);await loadFeed()}));
 loadFeed();
+
+// Step 9: task queue (project-scoped, reviewable, no automatic execution)
+function refreshTaskProjects(){
+ const select=$("taskProject"); if(!select)return; const current=select.value;
+ select.innerHTML='<option value="">Select a project…</option>'+allProjects.map(p=>'<option value="'+escapeAttr(p.id)+'">'+escapeHtml(p.title)+'</option>').join("");
+ if(allProjects.some(p=>p.id===current))select.value=current; if(select.value)loadTasks(select.value); else $("taskList").innerHTML="";
+}
+async function loadTasks(projectId){
+ if(!projectId){$("taskStatus").textContent="Choose a project to view its task queue."; $("taskList").innerHTML="";return}
+ try{
+  const tasks=await api("/api/projects/"+encodeURIComponent(projectId)+"/tasks");
+  $("taskStatus").textContent=tasks.length+" task(s) · status changes are saved immediately";
+  $("taskList").innerHTML=tasks.length?tasks.map(t=>'<article class="task-row"><div><strong>'+escapeHtml(t.task)+'</strong><small>Added '+dateText(t.createdAt)+'</small></div><select data-task-status="'+escapeAttr(t.id)+'"><option'+(t.status==="Pending"?" selected":"")+'>Pending</option><option'+(t.status==="In Progress"?" selected":"")+'>In Progress</option><option'+(t.status==="Done"?" selected":"")+'>Done</option><option'+(t.status==="Blocked"?" selected":"")+'>Blocked</option></select></article>').join(""):'<p class="task-empty">No tasks yet. Add your first task above.</p>';
+ }catch(e){$("taskStatus").textContent="Could not load tasks: "+e.message}
+}
+$("taskProject").addEventListener("change",e=>loadTasks(e.target.value));
+$("taskForm").addEventListener("submit",async e=>{
+ e.preventDefault();const projectId=$("taskProject").value,task=$("taskInput").value.trim();if(!projectId){showToast("Select a project first");return}if(!task)return;
+ try{await api("/api/projects/"+encodeURIComponent(projectId)+"/tasks",{method:"POST",body:JSON.stringify({task})});$("taskInput").value="";await loadTasks(projectId);await refresh()}catch(err){showToast("Could not add task: "+err.message)}
+});
+$("taskList").addEventListener("change",async e=>{
+ const sel=e.target.closest("[data-task-status]");if(!sel)return;const projectId=$("taskProject").value;
+ try{await api("/api/projects/"+encodeURIComponent(projectId)+"/tasks/"+encodeURIComponent(sel.dataset.taskStatus),{method:"PATCH",body:JSON.stringify({status:sel.value})});showToast("Task status saved");await loadTasks(projectId);await refresh()}catch(err){showToast("Status update failed: "+err.message)}
+});
