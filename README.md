@@ -95,3 +95,11 @@ Zero-cost-first freelance workspace built around software development skills (.N
 - ZIP export: `GET /api/projects/:id/workspace.zip` (requires saved workspace files; uses `archiver`).
 - API: `GET /api/projects/:id/workspace`, `PUT /api/projects/:id/workspace/file`, `POST /api/projects/:id/workspace/ai-edit`.
 - AI edit requires configured API credentials and may incur provider costs. Review diffs and test before use.
+
+## Step 12 — Real Project Scanner & AI Bug Fixer
+- Set `PROJECT_ROOT` in `.env` to the directory you want the workspace to scan; defaults to current working directory.
+- `GET /api/fs/scan` lists files (hidden folders, `.git`, dependency folders, and common secret filenames are excluded; scan capped at 350 entries).
+- `GET /api/fs/file?path=...` reads supported text files up to 300 KB; `PUT /api/fs/file` saves edits to existing supported files only.
+- `POST /api/fs/bug-fix` accepts a file path and bug description, returns AI replacement draft with original content; draft is not applied unless user loads it into editor and presses Save.
+- Text edit extensions are allow-listed; path traversal and symlink escape paths are blocked. Filesystem workspace is local-only and server binds to `127.0.0.1` by default. Do not expose publicly or set `HOST=0.0.0.0` without adding authentication and appropriate access controls.
+- AI Bug Fix requires provider configuration and can incur API charges. Source is not executed as part of scanning or AI analysis.
