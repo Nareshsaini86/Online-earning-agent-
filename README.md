@@ -87,3 +87,11 @@ Zero-cost-first freelance workspace built around software development skills (.N
 - Requires configured AI provider key; calls may incur charges.
 - Draft is not executed, written into source files, or tested automatically. Human review is required.
 
+
+## Step 11 — AI Developer Workspace
+- Project-scoped workspace file editor: load/save draft files and choose paths.
+- AI edit drafts compare the saved original with the unsaved AI result in a side-by-side review area; use `Use draft in editor` and then Save to persist.
+- Workspace file contents are stored in project JSON, not executed.
+- ZIP export: `GET /api/projects/:id/workspace.zip` (requires saved workspace files; uses `archiver`).
+- API: `GET /api/projects/:id/workspace`, `PUT /api/projects/:id/workspace/file`, `POST /api/projects/:id/workspace/ai-edit`.
+- AI edit requires configured API credentials and may incur provider costs. Review diffs and test before use.
