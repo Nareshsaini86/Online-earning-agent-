@@ -44,7 +44,7 @@ function renderFeed(){
  const tbody=$("opportunityRows"),empty=$("opportunityEmpty");
  if(!feedItems.length){tbody.innerHTML="";empty.classList.remove("hidden");return}
  empty.classList.add("hidden");
- tbody.innerHTML=feedItems.map(o=>'<tr><td>'+escapeHtml(o.title)+'<div class="opportunity-desc">'+escapeHtml((o.description||"").slice(0,240))+'</div>'+(o.matchedSkills?.length?'<div class="opportunity-skills">'+o.matchedSkills.slice(0,6).map(s=>'<span>'+escapeHtml(s)+'</span>').join("")+'</div>':'')+'</td><td>'+escapeHtml(o.source||"RSS")+'</td><td><span class="opportunity-score">'+(Number(o.score)||0)+' / 100</span></td><td>'+dateText(o.publishedAt)+'</td><td><div class="opportunity-actions"><a class="small-btn" target="_blank" rel="noopener noreferrer" href="'+escapeAttr(o.url)+'">Open</a><button class="small-btn" data-analyze-opp="'+escapeAttr(o.id)+'">Analyze</button><button class="small-btn" data-proposal-opp="'+escapeAttr(o.id)+'">Draft proposal</button><button class="small-btn" data-develop-opp="'+escapeAttr(o.id)+'">Development plan</button><button class="small-btn" data-save-opp="'+escapeAttr(o.id)+'">Save project</button></div></td></tr>').join("");
+ tbody.innerHTML=feedItems.map(o=>'<tr><td>'+escapeHtml(o.title)+'<div class="opportunity-desc">'+escapeHtml((o.description||"").slice(0,240))+'</div>'+(o.matchedSkills?.length?'<div class="opportunity-skills">'+o.matchedSkills.slice(0,6).map(s=>'<span>'+escapeHtml(s)+'</span>').join("")+'</div>':'')+'</td><td>'+escapeHtml(o.source||"RSS")+'</td><td><span class="opportunity-score">'+(Number(o.score)||0)+' / 100</span></td><td>'+dateText(o.publishedAt)+'</td><td><div class="opportunity-actions"><a class="small-btn" target="_blank" rel="noopener noreferrer" href="'+escapeAttr(o.url)+'">Open</a><button class="small-btn" data-analyze-opp="'+escapeAttr(o.id)+'">Analyze</button><button class="small-btn" data-proposal-opp="'+escapeAttr(o.id)+'">Draft proposal</button><button class="small-btn" data-develop-opp="'+escapeAttr(o.id)+'">Development plan</button><button class="small-btn" data-code-opp="'+escapeAttr(o.id)+'">Generate code</button><button class="small-btn" data-save-opp="'+escapeAttr(o.id)+'">Save project</button></div></td></tr>').join("");
 }
 async function loadFeed(){try{feedItems=await api("/api/opportunities");renderFeed()}catch(e){$("feedStatus").textContent="Unable to load feed results: "+e.message}}
 $("scanFeeds").addEventListener("click",async()=>{const b=$("scanFeeds");b.disabled=true;b.textContent="Scanning…";$("feedStatus").textContent="Checking configured RSS feeds. This may take a moment.";try{const data=await api("/api/opportunities/scan",{method:"POST"});feedItems=data.items||[];renderFeed();$("feedStatus").textContent="Scan finished · "+data.feedsFetched+" of "+data.feedsConfigured+" feeds fetched · "+feedItems.length+" items saved · "+data.scannedAt+(data.errors?.length?" · "+data.errors.length+" feed errors":"");if(data.errors?.length)showToast("Some RSS feeds failed; see status.");}catch(e){$("feedStatus").textContent="Feed scan failed: "+e.message;showToast("Feed scan failed")}finally{b.disabled=false;b.textContent="↻ Scan feeds"}});
@@ -74,6 +74,20 @@ $("opportunityRows").addEventListener("click",async e=>{
    $("analysisResults").scrollIntoView({behavior:"smooth",block:"start"});
   }catch(err){showToast("Proposal draft failed: "+err.message)}
   finally{proposal.disabled=false;proposal.textContent="Draft proposal"}
+  return;
+ }
+ const codeBtn=e.target.closest("[data-code-opp]");
+ if(codeBtn){
+  codeBtn.disabled=true;codeBtn.textContent="Generating…";
+  try{
+   const output=await api("/api/opportunities/"+encodeURIComponent(codeBtn.dataset.codeOpp)+"/generate-code",{method:"POST"});
+   const fileHtml=(output.files||[]).map((file,i)=>'<section class="generated-file"><div class="analysis-head"><b>'+escapeHtml(file.path)+'</b><button class="small-btn" data-copy-code="'+i+'">Copy file</button></div><pre><code>'+escapeHtml(file.content)+'</code></pre></section>').join("");
+   $("analysisResults").innerHTML='<article class="analysis-card code-output"><div class="analysis-head"><h3>Starter code workspace</h3><strong>'+output.files.length+' files</strong></div><p>'+escapeHtml(output.stack)+' · '+escapeHtml(output.notice)+'</p>'+fileHtml+'<button class="small-btn" id="copyAllCode">Copy all files</button></article>';
+   document.querySelectorAll("[data-copy-code]").forEach(b=>b.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(output.files[Number(b.dataset.copyCode)].content);showToast("File copied")}catch{showToast("Clipboard unavailable")}}));
+   $("copyAllCode").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(output.files.map(f=>"// "+f.path+"\\n"+f.content).join("\\n\\n"));showToast("All starter files copied")}catch{showToast("Clipboard unavailable")}});
+   $("analysisResults").scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(err){showToast("Code generation failed: "+err.message)}
+  finally{codeBtn.disabled=false;codeBtn.textContent="Generate code"}
   return;
  }
  const develop=e.target.closest("[data-develop-opp]");
