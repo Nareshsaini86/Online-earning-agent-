@@ -69,6 +69,28 @@ app.post('/api/projects/:id/tasks', async (req, res, next) => {
     p.tasks.unshift(item); p.updatedAt = new Date().toISOString(); await writeProjects(projects); res.status(201).json(item);
   } catch (e) { next(e); }
 });
+app.post('/api/projects/:id/tasks/:taskId/ai-draft', async (req, res, next) => {
+  try {
+    const projects = await readProjects();
+    const project = projects.find(x => x.id === req.params.id);
+    if (!project) return res.status(404).json({ error: 'Project not found.' });
+    const task = (project.tasks || []).find(x => x.id === req.params.taskId);
+    if (!task) return res.status(404).json({ error: 'Task not found.' });
+    const promptDescription = [
+      'Project: ' + String(project.title || '').slice(0, 300),
+      'Project requirements: ' + String(project.description || '').slice(0, 10000),
+      'Task to implement: ' + String(task.task || '').slice(0, 1000),
+      'Existing project context (if any): ' + String(req.body?.context || '').slice(0, 10000),
+      'Return a focused implementation draft with filenames, complete code blocks, assumptions, and test/validation steps. Avoid unrelated refactoring.'
+    ].join('\n\n');
+    const draft = await generateWithAI({ title: project.title + ' — ' + task.task, description: promptDescription, mode: 'code' });
+    task.aiDraft = draft;
+    task.updatedAt = new Date().toISOString();
+    project.updatedAt = task.updatedAt;
+    await writeProjects(projects);
+    res.json(draft);
+  } catch (e) { res.status(e.status || 500).json({ error: e.message || 'Task AI draft failed.' }); }
+});
 app.patch('/api/projects/:id/tasks/:taskId', async (req, res, next) => {
   try {
     const status = String(req.body?.status || ''); if (!['Pending','In Progress','Done','Blocked'].includes(status)) return res.status(400).json({ error: 'Invalid task status.' });
