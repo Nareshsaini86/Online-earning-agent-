@@ -134,7 +134,7 @@ async function loadTasks(projectId){
  try{
   const tasks=await api("/api/projects/"+encodeURIComponent(projectId)+"/tasks");
   $("taskStatus").textContent=tasks.length+" task(s) · status changes are saved immediately";
-  $("taskList").innerHTML=tasks.length?tasks.map(t=>'<article class="task-row"><div><strong>'+escapeHtml(t.task)+'</strong><small>Added '+dateText(t.createdAt)+'</small></div><button class="small-btn" data-ai-task="'+escapeAttr(t.id)+'">AI draft</button><select data-task-status="'+escapeAttr(t.id)+'"><option'+(t.status==="Pending"?" selected":"")+'>Pending</option><option'+(t.status==="In Progress"?" selected":"")+'>In Progress</option><option'+(t.status==="Done"?" selected":"")+'>Done</option><option'+(t.status==="Blocked"?" selected":"")+'>Blocked</option></select></article>').join(""):'<p class="task-empty">No tasks yet. Add your first task above.</p>';
+  $("taskList").innerHTML=tasks.length?tasks.map(t=>'<article class="task-row"><div><strong>'+escapeHtml(t.task)+'</strong><small>Added '+dateText(t.createdAt)+'</small></div><select data-task-status="'+escapeAttr(t.id)+'"><option'+(t.status==="Pending"?" selected":"")+'>Pending</option><option'+(t.status==="In Progress"?" selected":"")+'>In Progress</option><option'+(t.status==="Done"?" selected":"")+'>Done</option><option'+(t.status==="Blocked"?" selected":"")+'>Blocked</option></select></article>').join(""):'<p class="task-empty">No tasks yet. Add your first task above.</p>';
  }catch(e){$("taskStatus").textContent="Could not load tasks: "+e.message}
 }
 $("taskProject").addEventListener("change",e=>loadTasks(e.target.value));
@@ -147,16 +147,5 @@ $("taskList").addEventListener("change",async e=>{
  try{await api("/api/projects/"+encodeURIComponent(projectId)+"/tasks/"+encodeURIComponent(sel.dataset.taskStatus),{method:"PATCH",body:JSON.stringify({status:sel.value})});showToast("Task status saved");await loadTasks(projectId);await refresh()}catch(err){showToast("Status update failed: "+err.message)}
 });
 
-$("taskList").addEventListener("click",async e=>{
- const btn=e.target.closest("[data-ai-task]");if(!btn)return;const projectId=$("taskProject").value,taskId=btn.dataset.aiTask;
- btn.disabled=true;btn.textContent="AI writing…";
- try{
-  const draft=await api("/api/projects/"+encodeURIComponent(projectId)+"/tasks/"+encodeURIComponent(taskId)+"/ai-draft",{method:"POST"});
-  $("taskDraft").innerHTML='<article class="analysis-card ai-code-card"><div class="analysis-head"><h3>Task AI Developer Draft</h3><strong>'+escapeHtml(draft.model)+'</strong></div><p>'+escapeHtml(draft.notice)+'</p><textarea id="taskDraftText" rows="20" spellcheck="false"></textarea><button class="small-btn" id="copyTaskDraft">Copy draft</button></article>';
-  $("taskDraftText").value=draft.content;
-  $("copyTaskDraft").addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("taskDraftText").value);showToast("Task draft copied")}catch{showToast("Clipboard unavailable")}});
-  $("taskDraft").scrollIntoView({behavior:"smooth",block:"start"});
- }catch(err){showToast(err.message)}
- finally{btn.disabled=false;btn.textContent="AI draft"}
-});
+
 
