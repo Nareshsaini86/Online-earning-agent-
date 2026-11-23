@@ -1,42 +1,44 @@
 # Online Earning Agent (AI Freelance Assistant)
 
-A zero-cost-first, self-hostable web dashboard that helps discover software opportunities, score them, track them, and prepare proposals. It is designed around .NET/C#/ASP.NET Core/SQL skills.
+A zero-cost-first, self-hostable workspace for collecting software freelance opportunities, tracking projects, and preparing proposals. This project is being built in stages.
 
-## Safety & platform notes
-- This is an assistant, not a guaranteed earning bot.
-- Use platform-approved APIs, feeds, email alerts, or manually supplied links. Do not bypass login, CAPTCHA, or platform anti-bot rules.
-- It does not auto-apply, accept contracts, send messages, deliver work, or spend money. Those actions require your review.
-- AI features are optional and require an API key; API use can cost money. No key is used by default.
-- MVP discovery uses configured RSS feeds and manual job import. Feed availability and terms vary.
+## Step 2 — Dashboard (implemented)
+- Responsive mobile and desktop dashboard
+- Project create, edit, delete
+- Project statuses: New, Analyzing, Proposal, In Progress, Completed, Rejected
+- Search projects and filter by status
+- Summary cards for project counts and potential budget (not actual income)
+- Project fields: title, client, source, budget (USD), URL, description
+- Express API and local JSON persistence
+- Health endpoint
 
 ## Quick start
-1. Install Node.js 20+.
-2. Copy `.env.example` to `.env` if you want to configure settings.
-3. Run `npm install`, then `npm start`.
-4. Open http://localhost:3000
+1. Install Node.js 20 or newer.
+2. Clone this repository.
+3. Run `npm install`.
+4. Run `npm start`.
+5. Open `http://localhost:3000`.
 
+No AI provider key is needed to run the dashboard. `.env` is optional for the dashboard. Do not commit credentials.
 
-## Features
-- Mobile-responsive dashboard
-- RSS discovery and manual job intake
-- Opportunity score and skill matching
-- Job details, status tracking and notes
-- Proposal draft generation (template-based)
-- Optional AI enhancement (disabled unless configured)
-- Local JSON store; no external database needed
-- API endpoints and health check
+## API
+- `GET /api/health` — server health
+- `GET /api/projects` — list projects
+- `POST /api/projects` — create project
+- `PATCH /api/projects/:id` — update project
+- `DELETE /api/projects/:id` — delete project
+- `GET /api/dashboard` — project summary
 
-
-## Configuration
-See `.env.example`. Never commit `.env`, tokens, passwords, or API keys.
-
+## Safety and limitations
+- This is a project tracker, not a guaranteed income bot.
+- Project data is stored in a local JSON file in the server's `data/` directory. On some hosting platforms, ephemeral filesystems may reset; persistent storage is required for reliable hosted use.
+- No automatic client messages, applications, contract acceptance, project delivery, or payments are enabled.
+- Opportunity sources and integrations will be added in later steps, using official APIs, feeds, or permitted methods. Never bypass platform login, CAPTCHA, or anti-bot controls.
+- AI features will be optional and must be configured separately. API usage may incur fees; no paid services should be enabled without approval.
 
 ## Roadmap
-- MVP: dashboard, RSS/manual discovery, scoring, proposal drafts
-- Optional AI analysis and proposal drafting
-- Sandbox workspace and test runner for approved projects
-- Platform connectors only where official APIs and terms permit
+- Step 2: Dashboard and project management — implemented
+- Next: job discovery feeds and opportunity analysis
+- Later: proposal drafting, approved coding workspace/test runner, notifications, and permitted platform integrations
 
-
-## Limitations
-No guarantees of job source coverage, automated outreach, project completion, or earnings. Review opportunities and proposals before submitting.
+Review all job details and proposals before submitting. Earnings are not guaranteed.
