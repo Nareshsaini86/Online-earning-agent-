@@ -62,3 +62,11 @@ Zero-cost-first freelance workspace built around software development skills (.N
 - Generated file drafts appear in the opportunity panel and can be copied individually or together.
 - API: `POST /api/opportunities/:id/generate-code`
 - Generated drafts are not executed, written to disk, tested, or production-ready. Review before use.
+
+## Step 8 — Optional AI Coding Engine
+- AI code drafts are generated through a configurable OpenAI-compatible chat-completions endpoint.
+- Configure `AI_API_KEY`, `AI_MODEL`, and `AI_BASE_URL` in your local `.env` (copy from `.env.example`).
+- The AI feature is disabled until a key is configured; API usage can incur charges. Do not commit secrets.
+- Job Finder includes an `AI code` action; output is editable and copyable, but never executed by the app.
+- API: `POST /api/opportunities/:id/ai-code`
+- Review AI output and test it locally before client use. Human approval remains required for any client contact or delivery.
